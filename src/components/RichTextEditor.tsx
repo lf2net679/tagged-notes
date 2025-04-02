@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -62,7 +62,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const addLink = () => {
     const url = prompt('輸入連結網址');
     if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
+      // Update to use the correct API
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
     }
   };
 
