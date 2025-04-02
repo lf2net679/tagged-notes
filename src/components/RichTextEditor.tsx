@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { useEditor, EditorContent, Editor } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
 import { 
   Bold, Italic, List, ListOrdered, Heading1, Heading2, 
   Image as ImageIcon, Link as LinkIcon, Undo, Redo, 
@@ -27,14 +28,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder = '開始寫作...',
   className
 }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
-
   const editor = useEditor({
     extensions: [
       StarterKit,
       Image,
       Link.configure({
         openOnClick: false,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
       }),
       Placeholder.configure({
         placeholder,
@@ -129,7 +131,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           title="有序列表"
         />
         <MenuButton
-          isActive={editor.isActive('code')}
+          isActive={editor.isActive('codeBlock')}
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           icon={Code}
           title="程式碼區塊"
@@ -164,12 +166,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           title="靠右對齊"
         />
         <MenuButton
-          onClick={() => editor.chain().focus().undo().run()}
+          onClick={() => editor.commands.undo()}
           icon={Undo}
           title="復原"
         />
         <MenuButton
-          onClick={() => editor.chain().focus().redo().run()}
+          onClick={() => editor.commands.redo()}
           icon={Redo}
           title="重做"
         />
