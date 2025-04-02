@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
 import { Textarea } from "@/components/ui/textarea";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import RichTextEditor from "@/components/RichTextEditor";
 import Sidebar from "@/components/Sidebar";
 import { Note } from "@/types/note";
 import { getAllNotes, getAllFolders, getAllTags, getNoteById, createNote, updateNote, ViewMode } from "@/services/noteService";
@@ -72,7 +73,7 @@ const Index = () => {
   const handleCreateNote = () => {
     const newNote = createNote({
       title: "新筆記",
-      content: "# 新筆記\n\n開始寫作...",
+      content: "<h1>新筆記</h1><p>開始寫作...</p>",
       folderId: activeFolderId || undefined,
     });
     setNotes(getAllNotes());
@@ -189,11 +190,10 @@ const Index = () => {
                   {viewMode === "edit" ? (
                     <Card className="h-full border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800 transition-all">
                       <CardContent className="p-0 h-full">
-                        <Textarea
-                          className="w-full h-full p-6 border-none rounded-md bg-white dark:bg-slate-800 dark:text-white font-mono resize-none focus:ring-0 transition-colors"
-                          value={content}
-                          onChange={(e) => handleContentChange(e.target.value)}
-                          placeholder="開始寫作..."
+                        <RichTextEditor
+                          content={content}
+                          onChange={handleContentChange}
+                          className="h-full"
                         />
                       </CardContent>
                     </Card>
