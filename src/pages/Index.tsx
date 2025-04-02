@@ -8,8 +8,10 @@ import Sidebar from "@/components/Sidebar";
 import { Note } from "@/types/note";
 import { getAllNotes, getAllFolders, getAllTags, getNoteById, createNote, updateNote, ViewMode } from "@/services/noteService";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Calendar, Clock, Tag, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const Index = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -69,27 +71,43 @@ const Index = () => {
 
   const handleCreateNote = () => {
     const newNote = createNote({
-      title: "New Note",
-      content: "# New Note\n\nStart writing here...",
+      title: "新筆記",
+      content: "# 新筆記\n\n開始寫作...",
       folderId: activeFolderId || undefined,
     });
     setNotes(getAllNotes());
     setActiveNoteId(newNote.id);
     setViewMode("edit"); // Switch to edit mode when creating a new note
     toast({
-      title: "Note created",
-      description: "A new note has been created",
+      title: "筆記已建立",
+      description: "新筆記已成功建立",
     });
   };
 
   const toggleViewMode = () => {
     setViewMode(viewMode === "edit" ? "preview" : "edit");
+    toast({
+      title: viewMode === "edit" ? "預覽模式" : "編輯模式",
+      description: viewMode === "edit" ? "切換至預覽模式" : "切換至編輯模式",
+    });
   };
 
+  const saveNote = () => {
+    if (activeNoteId) {
+      updateNote(activeNoteId, { content, title });
+      toast({
+        title: "已儲存",
+        description: "筆記已成功儲存",
+      });
+    }
+  };
+
+  const activeNote = activeNoteId ? getNoteById(activeNoteId) : null;
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar border-r border-slate-200 dark:border-slate-700">
           <Sidebar
             folders={getAllFolders()}
             notes={notes}
@@ -102,47 +120,89 @@ const Index = () => {
           />
         </ResizablePanel>
         
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle className="transition-colors" />
         
         <ResizablePanel defaultSize={80}>
-          <div className="p-4 h-full flex flex-col">
+          <div className="p-6 h-full flex flex-col">
             {activeNoteId ? (
               <>
-                <div className="mb-4 flex justify-between items-center">
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => handleTitleChange(e.target.value)}
-                    className={`w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 ${viewMode === "preview" ? "pointer-events-none" : ""}`}
-                    placeholder="Untitled"
-                    readOnly={viewMode === "preview"}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleViewMode}
-                    className="ml-2"
-                  >
-                    {viewMode === "edit" ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
-                    {viewMode === "edit" ? "Preview" : "Edit"}
-                  </Button>
+                <div className="mb-4 flex flex-col space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        className={`w-full text-3xl font-bold bg-transparent border-none outline-none focus:ring-0 dark:text-white transition-colors ${viewMode === "preview" ? "pointer-events-none" : ""}`}
+                        placeholder="無標題"
+                        readOnly={viewMode === "preview"}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={saveNote}
+                        className="bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-all"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        儲存
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleViewMode}
+                        className="bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-all"
+                      >
+                        {viewMode === "edit" ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+                        {viewMode === "edit" ? "預覽" : "編輯"}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Metadata row */}
+                  {activeNote && (
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-4">
+                      <div className="flex items-center">
+                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                        <span>{format(new Date(activeNote.createdAt), 'yyyy/MM/dd')}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3.5 w-3.5 mr-1" />
+                        <span>更新於 {format(new Date(activeNote.updatedAt), 'HH:mm')}</span>
+                      </div>
+                      {activeNote.tags && activeNote.tags.length > 0 && (
+                        <div className="flex items-center">
+                          <Tag className="h-3.5 w-3.5 mr-1" />
+                          <span>
+                            {activeNote.tags.map(tagId => 
+                              getAllTags().find(tag => tag.id === tagId)?.name
+                            ).join(', ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
                   {viewMode === "edit" ? (
-                    <Card className="h-full">
-                      <CardContent className="p-4 h-full">
+                    <Card className="h-full border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800 transition-all">
+                      <CardContent className="p-0 h-full">
                         <Textarea
-                          className="w-full h-full p-4 border rounded-md dark:bg-slate-800 dark:text-white font-mono resize-none"
+                          className="w-full h-full p-6 border-none rounded-md bg-white dark:bg-slate-800 dark:text-white font-mono resize-none focus:ring-0 transition-colors"
                           value={content}
                           onChange={(e) => handleContentChange(e.target.value)}
+                          placeholder="開始寫作..."
                         />
                       </CardContent>
                     </Card>
                   ) : (
-                    <Card className="h-full overflow-auto">
-                      <CardContent className="p-4">
-                        <MarkdownRenderer content={content} />
+                    <Card className="h-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800 transition-all">
+                      <CardContent className="p-6 h-full">
+                        <ScrollArea className="h-full">
+                          <MarkdownRenderer content={content} />
+                        </ScrollArea>
                       </CardContent>
                     </Card>
                   )}
@@ -150,14 +210,15 @@ const Index = () => {
               </>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <p className="mb-4">Select a note or create a new one</p>
-                  <button
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                <div className="text-center text-gray-500 dark:text-gray-400 max-w-md">
+                  <h2 className="text-2xl font-bold mb-2">歡迎使用筆記應用</h2>
+                  <p className="mb-6">選擇一個筆記或建立一個新的筆記開始寫作</p>
+                  <Button
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
                     onClick={handleCreateNote}
                   >
-                    Create New Note
-                  </button>
+                    建立新筆記
+                  </Button>
                 </div>
               </div>
             )}
