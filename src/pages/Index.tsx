@@ -1,14 +1,15 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
 import { Textarea } from "@/components/ui/textarea";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import Sidebar from "@/components/Sidebar";
 import { Note } from "@/types/note";
-import { getAllNotes, getAllFolders, getAllTags, getNoteById, createNote, updateNote } from "@/services/noteService";
+import { getAllNotes, getAllFolders, getAllTags, getNoteById, createNote, updateNote, ViewMode } from "@/services/noteService";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -16,6 +17,7 @@ const Index = () => {
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,10 +75,15 @@ const Index = () => {
     });
     setNotes(getAllNotes());
     setActiveNoteId(newNote.id);
+    setViewMode("edit"); // Switch to edit mode when creating a new note
     toast({
       title: "Note created",
       description: "A new note has been created",
     });
+  };
+
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "edit" ? "preview" : "edit");
   };
 
   return (
@@ -101,23 +108,28 @@ const Index = () => {
           <div className="p-4 h-full flex flex-col">
             {activeNoteId ? (
               <>
-                <div className="mb-4">
+                <div className="mb-4 flex justify-between items-center">
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => handleTitleChange(e.target.value)}
-                    className="w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0"
+                    className={`w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 ${viewMode === "preview" ? "pointer-events-none" : ""}`}
                     placeholder="Untitled"
+                    readOnly={viewMode === "preview"}
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleViewMode}
+                    className="ml-2"
+                  >
+                    {viewMode === "edit" ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+                    {viewMode === "edit" ? "Preview" : "Edit"}
+                  </Button>
                 </div>
-                <Tabs defaultValue="edit" className="flex-1 flex flex-col">
-                  <TabsList>
-                    <TabsTrigger value="edit">Edit</TabsTrigger>
-                    <TabsTrigger value="preview">Preview</TabsTrigger>
-                    <TabsTrigger value="split">Split</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="edit" className="flex-1 mt-2">
+                
+                <div className="flex-1">
+                  {viewMode === "edit" ? (
                     <Card className="h-full">
                       <CardContent className="p-4 h-full">
                         <Textarea
@@ -127,42 +139,14 @@ const Index = () => {
                         />
                       </CardContent>
                     </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="preview" className="flex-1 mt-2">
+                  ) : (
                     <Card className="h-full overflow-auto">
                       <CardContent className="p-4">
                         <MarkdownRenderer content={content} />
                       </CardContent>
                     </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="split" className="flex-1 mt-2">
-                    <ResizablePanelGroup direction="horizontal" className="h-full">
-                      <ResizablePanel defaultSize={50}>
-                        <Card className="h-full border-r">
-                          <CardContent className="p-4 h-full">
-                            <Textarea
-                              className="w-full h-full p-4 border rounded-md dark:bg-slate-800 dark:text-white font-mono resize-none"
-                              value={content}
-                              onChange={(e) => handleContentChange(e.target.value)}
-                            />
-                          </CardContent>
-                        </Card>
-                      </ResizablePanel>
-                      
-                      <ResizableHandle withHandle />
-                      
-                      <ResizablePanel defaultSize={50}>
-                        <Card className="h-full overflow-auto">
-                          <CardContent className="p-4">
-                            <MarkdownRenderer content={content} />
-                          </CardContent>
-                        </Card>
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  </TabsContent>
-                </Tabs>
+                  )}
+                </div>
               </>
             ) : (
               <div className="flex items-center justify-center h-full">

@@ -110,3 +110,6 @@ export const getAllFolders = (): Folder[] => {
 export const getAllTags = (): Tag[] => {
   return [...tags];
 };
+
+// View mode types
+export type ViewMode = 'edit' | 'preview';
