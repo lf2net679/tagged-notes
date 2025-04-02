@@ -62,8 +62,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const addLink = () => {
     const url = prompt('輸入連結網址');
     if (url) {
-      // Update to use the correct API
-      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+      // First check if text is selected, then extend the selection if needed
+      if (editor.isActive('link')) {
+        // If a link is already active at the cursor, update it
+        editor.chain().focus().extendMarkRange('link').unsetLink().setLink({ href: url }).run();
+      } else {
+        // If no link is active, create a new one
+        editor.chain().focus().toggleLink({ href: url }).run();
+      }
     }
   };
 
